@@ -1,0 +1,197 @@
+package org.uniportal.docExport;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.log4j.Logger;
+import org.apache.pdfbox.exceptions.COSVisitorException;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.edit.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.springframework.web.servlet.view.document.AbstractExcelView;
+import org.uniportal.ErrorLog.ErroMessageConstants;
+import org.uniportal.ErrorLog.InformationMessageConstants;
+import org.uniportal.Exceptions.FileExportException;
+import org.uniportal.model.Student;
+
+public class StudentExcelDocExporter extends AbstractExcelView {
+
+	private static Logger logger = Logger
+			.getLogger(StudentExcelDocExporter.class.getName());
+
+	@Override
+	protected void buildExcelDocument(Map model, HSSFWorkbook workbook,
+			HttpServletRequest request, HttpServletResponse response)
+			throws Exception {
+
+		// NOTE: More sheet can be added to this same Excel to generate
+		// complex reporters.
+		HSSFSheet excelSheet = workbook.createSheet("StudentList_Generted_On_"
+				+ new Date());
+
+		// TODO I hate hard-coded constants in the code.
+		@SuppressWarnings("unchecked")
+		List<Student> studentList = (List<Student>) model.get("studentList");
+		setExcelRows(excelSheet, studentList);
+
+		logger.info(InformationMessageConstants.EXCEL_REPORT_GENERATED);
+
+		// Generate Also Pdf Format
+		generateStudentListInPdf(studentList);
+		logger.info(InformationMessageConstants.PDF_REPORT_GENERATED);
+
+	}
+
+	/**
+	 * Also generate Pdf
+	 * 
+	 * @param excelSheet
+	 * @param studentList
+	 */
+	public void setExcelRows(HSSFSheet excelSheet, List<Student> studentList) {
+
+		if (studentList == null) {
+			return;
+		}
+		// Build Header
+		HSSFRow excelHeader = excelSheet.createRow(0);
+		excelHeader.createCell(0).setCellValue("Id");
+		excelHeader.createCell(1).setCellValue("First Name");
+		excelHeader.createCell(2).setCellValue("Last Name");
+
+		// body
+		int record = 1;
+		for (Student student : studentList) {
+			HSSFRow excelRow = excelSheet.createRow(record++);
+			excelRow.createCell(0).setCellValue(student.getId());
+			excelRow.createCell(1).setCellValue(student.getFirstName());
+			excelRow.createCell(2).setCellValue(student.getLastName());
+		}
+
+	}
+
+	/**
+	 * Generate report in Pdf.
+	 */
+	private void generateStudentListInPdf(List<Student> studentList) {
+
+		if (studentList == null) {
+			return;
+		}
+
+		// TODO index should not be hard coded.
+		// + 1 for header
+		String[][] content = new String[studentList.size() + 1][3];
+		content[0][0] = "Id";
+		content[0][1] = "First Name";
+		content[0][2] = "Last Name";
+
+		// pdf content
+		int pdfRowIndex = 1;
+		for (Student student : studentList) {
+			if (pdfRowIndex <= studentList.size()) {
+				content[pdfRowIndex][0] = student.getId() + "";
+				content[pdfRowIndex][1] = student.getFirstName();
+				content[pdfRowIndex][2] = student.getLastName();
+				pdfRowIndex++;
+			}
+		}
+
+		try {
+			PDDocument doc = new PDDocument();
+			PDPage page = new PDPage();
+			doc.addPage(page);
+			PDPageContentStream contentStream = new PDPageContentStream(doc,
+					page);
+
+			generateStudentListInPdf(page, contentStream, 700, 100, content);
+			contentStream.close();
+			// format file name with today.
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH-mm-ss");
+
+			// TODO hard-coded Path
+			doc.save("D:" + File.separatorChar + "StudentExported_ON_"
+					+ sdf.format(new Date()) + ".pdf");
+		} catch (IOException | COSVisitorException e1) {
+			logger.error(ErroMessageConstants.PDF_GENERATION_ERROR,
+					new FileExportException(
+							ErroMessageConstants.PDF_GENERATION_ERROR));
+		}
+	}
+
+	/**
+	 * Export Pdf format
+	 * 
+	 * @param page
+	 * @param contentStream
+	 * @param y
+	 * @param margin
+	 * @param content
+	 * @throws IOException
+	 */
+	private void generateStudentListInPdf(PDPage page,
+			PDPageContentStream contentStream, float y, float margin,
+			String[][] content) throws IOException {
+		final int rows = content.length;
+		final int cols = content[0].length;
+		final float rowHeight = 20f;
+		final float tableWidth = page.findMediaBox().getWidth() - (2 * margin);
+		final float tableHeight = rowHeight * rows;
+		final float colWidth = tableWidth / (float) cols;
+		final float cellMargin = 5f;
+
+		// TODO this header is now written check why ? ??
+		contentStream.setFont(PDType1Font.TIMES_ROMAN, 14);
+		contentStream.beginText();
+		contentStream.drawString("Sample Reported Generated by Uniportal");
+		contentStream.endText();
+		contentStream.beginText();
+		contentStream.drawString("Student Registration Form");
+		contentStream.endText();
+
+		float nexty = y;
+		for (int i = 0; i <= rows; i++) {
+			contentStream.drawLine(margin, nexty, margin + tableWidth, nexty);
+			nexty -= rowHeight;
+		}
+
+		// draw the columns
+		float nextx = margin;
+		for (int i = 0; i <= cols; i++) {
+			contentStream.drawLine(nextx, y, nextx, y - tableHeight);
+			nextx += colWidth;
+		}
+
+		// now add the text
+		contentStream.setFont(PDType1Font.TIMES_ROMAN, 10);
+
+		float textx = margin + cellMargin;
+		float texty = y - 15;
+		for (int i = 0; i < content.length; i++) {
+			for (int j = 0; j < content[i].length; j++) {
+				String text = content[i][j];
+				contentStream.beginText();
+
+				contentStream.moveTextPositionByAmount(textx, texty);
+
+				contentStream.drawString(text);
+				contentStream.endText();
+				textx += colWidth;
+			}
+			texty -= rowHeight;
+			textx = margin + cellMargin;
+		}
+	}
+
+}
