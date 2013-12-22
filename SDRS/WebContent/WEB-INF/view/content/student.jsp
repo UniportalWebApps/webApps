@@ -49,7 +49,7 @@
         <div align="center" style="display: table-cell; height:auto; width:780px;">         	
         	<div align="left" id="rightMain" style="background:#F2F2F2; height:auto; margin-left: 1px;">
         		<br>        		
-		        	<div>
+		        	<div align="center">
 						<a href="#" id="reg"> <img alt="Register" src="../../images/registerStudent.png" width="60" height="60" > </a>
 						<a href="#" id="addr"> <img alt="Adress" src="../../images/AddressBook.png" width="60" height="60"> </a>
 						<a href="#" id="summ"> <img alt="Summary" src="../../images/StudentSummary.png" width="60" height="60"> </a>
@@ -69,9 +69,6 @@
 						</form>
 					</div>
 
-				<div id="address">
-				<h3>Add Student Address  </h3>
-				</div>
 		    </div>         
         </div>
     </div>
