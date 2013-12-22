@@ -12,32 +12,12 @@
 	 Otherwise stack overflow problem will happen while parsing the jsp file -->
 <jsp:include page="JqueryContainer.jsp" />
 
-
-<script type="text/javascript">
-$( document ).ready(function() {
-	
-	$("#EXPND_LEFT").hide();
-	
-	$( "#CLPS_LEFT" ).click(function(){
-		$("#CLPS_LEFT").hide();
-		$("#leftMain").hide();
-		$("#EXPND_LEFT").show();		
-	});
-	
-	
-	$( "#EXPND_LEFT" ).click(function(){
-		$("#EXPND_LEFT").hide();
-		$("#CLPS_LEFT").show();
-		$("#leftMain").show();			
-	});
-
-});
-</script>
-
 <style type="text/css">
 <%@ include file="../../resource/css/divStyle.css" %>
 </style>
 </head>
+
+
 <body background="../../images/school.jpg" style="text-align: center">
 <div align="center" class="divBody" style="margin:0 auto;">
 <img src="../../images/SiteBanner.jpg">
