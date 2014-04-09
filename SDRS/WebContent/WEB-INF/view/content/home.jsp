@@ -8,7 +8,6 @@
 <title>Uniportal Home</title>
 </head>
 <body background="../../images/school.jpg">
-<jsp:include page="main.jsp" />
 <div align="center">
 <h2>Welcome to the home, the right school feels like home!</h2>
 </div>
